@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b0b14">
+  <meta name="description" content="Riftforge — фэнтези-кликер про осколки, восемь миров и силу перерождения.">
+  <title>Riftforge — Осколки разлома</title>
+  <link rel="icon" href="assets/favicon.png" type="image/png">
+  <link rel="stylesheet" href="style.css">
+  <script defer src="engine.js"></script>
+  <script defer src="game.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="shell topbar-inner">
+      <div class="brand">
+        <span class="brand-mark" data-icon="logo"></span>
+        <div><strong>RIFT<span>FORGE</span></strong><small>ОСКОЛКИ РАЗЛОМА</small></div>
+      </div>
+      <div class="top-actions">
+        <span class="save-status" id="save-status"><i></i>Автосохранение</span>
+        <button class="icon-button" id="sound" type="button" aria-label="Включить звук" title="Включить звук" data-icon="mute"></button>
+        <button class="icon-button" id="settings" type="button" aria-label="Настройки" title="Настройки" data-icon="settings"></button>
+      </div>
+    </div>
+  </header>
+
+  <main class="shell game">
+    <section class="stats" aria-label="Ресурсы">
+      <div class="stat stat-main"><span class="stat-icon" data-icon="gem"></span><div><span>Осколки</span><strong id="shards">0</strong></div></div>
+      <div class="stat"><span class="stat-icon" data-icon="cursor"></span><div><span>За удар</span><strong id="per-click">+1</strong></div></div>
+      <div class="stat"><span class="stat-icon teal" data-icon="bolt"></span><div><span>В секунду</span><strong id="per-second">+0</strong></div></div>
+      <div class="stat"><span class="stat-icon amber" data-icon="sun"></span><div><span>Эфир</span><strong id="essence">0</strong></div></div>
+    </section>
+
+    <div class="dashboard">
+      <aside class="panel world-panel" aria-labelledby="world-title">
+        <div class="panel-heading">
+          <div><span class="section-kicker"><span data-icon="compass"></span> ПУТЕШЕСТВИЕ</span><h2 id="world-title">Миры</h2></div>
+          <span class="count" id="world-count">1 / 8</span>
+        </div>
+        <div id="world-list" class="world-list"></div>
+        <div class="world-note"><span data-icon="info"></span><span>Новые миры открываются по мере добычи осколков.</span></div>
+      </aside>
+
+      <div class="center">
+        <section class="arena" id="arena" aria-labelledby="location-title" data-world="0">
+          <div class="scene" aria-hidden="true"></div>
+          <div class="arena-shade" aria-hidden="true"></div>
+          <canvas id="particles" aria-hidden="true"></canvas>
+          <div class="arena-top">
+            <div class="region"><span data-icon="compass"></span><span id="region">МИР 01</span></div>
+            <h1 id="location-title">Сумрачная шахта</h1>
+          </div>
+          <span class="location-bonus" id="location-bonus" title="Множитель добычи мира">×1</span>
+          <button type="button" id="crystal" class="crystal" aria-label="Ударить по кристаллу">
+            <span class="crystal-ring"></span><span class="crystal-diamond"></span>
+          </button>
+          <div class="arena-bottom">
+            <div class="hit-hint" id="hit-hint"><span data-icon="cursor"></span> Ударь по кристаллу <kbd>Пробел</kbd></div>
+            <div class="combo" aria-label="Серия ударов">
+              <div><span><span data-icon="flame"></span> Серия</span><b id="combo-value">×1</b></div>
+              <div class="track"><i id="combo-progress"></i></div>
+            </div>
+          </div>
+        </section>
+        <div class="panel quest" aria-label="Поручение">
+          <span class="quest-icon stat-icon amber" data-icon="flag"></span>
+          <div class="quest-content"><span class="section-kicker">ПОРУЧЕНИЕ</span><h2 id="quest-name">Первый резонанс</h2><div class="track"><i id="quest-progress"></i></div></div>
+          <div class="quest-side"><span id="quest-count">0 / 30 ударов</span><button type="button" class="reward" id="quest-reward" disabled></button></div>
+        </div>
+      </div>
+
+      <aside class="panel forge-panel" aria-labelledby="forge-title">
+        <div class="panel-heading"><div><span class="section-kicker"><span data-icon="hammer"></span> РАЗВИТИЕ</span><h2 id="forge-title">Кузница</h2></div></div>
+        <div class="forge-nav"><button type="button" class="forge-tab selected" id="upgrade-tab"><span data-icon="hammer"></span> Улучшения</button><button type="button" class="forge-tab" id="tree-open"><span data-icon="branch"></span> Древо</button></div>
+        <div class="buy-heading"><span>Количество</span><div class="segmented" aria-label="Количество улучшений"><button type="button" data-buy="1" aria-pressed="true">×1</button><button type="button" data-buy="10" aria-pressed="false">×10</button><button type="button" data-buy="max" aria-pressed="false">Макс</button></div></div>
+        <div id="upgrade-list" class="upgrade-list"></div>
+        <button type="button" id="surge" class="surge" disabled>
+          <i id="surge-progress"></i><span class="surge-icon" data-icon="bolt"></span><span><strong>Резонанс</strong><small id="surge-detail">×3 к добыче на 12 секунд</small></span><b id="surge-value">0%</b>
+        </button>
+      </aside>
+    </div>
+
+    <section class="ascension panel" aria-labelledby="rebirth-title">
+      <div class="ascension-intro"><span class="ascension-icon" data-icon="cycle"></span><div><h2 id="rebirth-title">Перерождение</h2><p>Начни новый цикл и получи эфир для Древа навыков.</p></div></div>
+      <div class="rebirth-progress"><div><span>До перерождения</span><strong id="rebirth-count">0 / 5 000</strong></div><div class="track"><i id="rebirth-progress"></i></div></div>
+      <button type="button" class="ascend-button" id="rebirth" aria-disabled="true"><span data-icon="cycle"></span><span>Переродиться</span><span data-icon="lock" id="rebirth-lock"></span></button>
+    </section>
+
+    <footer><span>RIFT<span class="footer-violet">FORGE</span> <span class="footer-version">v1.0.0</span></span><button type="button" id="stats-open"><span data-icon="chart"></span> Статистика</button></footer>
+  </main>
+
+  <dialog class="modal tree-modal" id="tree-dialog" aria-labelledby="tree-title">
+    <div class="modal-heading">
+      <div><span class="section-kicker">ПЕРЕРОЖДЕНИЕ</span><h2 id="tree-title">Древо навыков</h2><p>Эфир открывает навыки, которые действуют во всех циклах.</p></div>
+      <span class="ether-badge"><span data-icon="sun"></span><b id="tree-essence">0</b></span>
+      <form method="dialog"><button class="icon-button" aria-label="Закрыть" data-icon="close"></button></form>
+    </div>
+    <div class="tree-scroll"><div id="tree-map" class="tree-map"></div></div>
+    <div class="skill-info" id="skill-info"></div>
+  </dialog>
+
+  <dialog class="modal" id="rebirth-dialog" aria-labelledby="rebirth-dialog-title">
+    <div class="modal-heading"><div><span class="section-kicker">НОВЫЙ ЦИКЛ</span><h2 id="rebirth-dialog-title">Перерождение</h2></div><form method="dialog"><button class="icon-button" aria-label="Закрыть" data-icon="close"></button></form></div>
+    <div class="modal-body"><div class="rebirth-reward"><span data-icon="sun"></span><strong id="rebirth-reward"></strong></div><p>Осколки, улучшения кузницы и доступ к мирам сбросятся. Эфир, изученные навыки, статистика и поручения сохранятся.</p><p>Каждая полученная единица эфира навсегда увеличивает добычу на 12%.</p><button type="button" class="primary" id="rebirth-confirm">Начать новый цикл</button></div>
+  </dialog>
+
+  <dialog class="modal" id="settings-dialog" aria-labelledby="settings-title">
+    <div class="modal-heading"><div><h2 id="settings-title">Настройки</h2></div><form method="dialog"><button class="icon-button" aria-label="Закрыть" data-icon="close"></button></form></div>
+    <div class="modal-body settings-body">
+      <label class="setting"><span>Звуковые эффекты</span><input id="sound-toggle" type="checkbox"></label>
+      <label class="setting"><span>Частицы и эффекты удара</span><input id="fx-toggle" type="checkbox"></label>
+      <p>Файл сохранения можно перенести в другой браузер. Загрузка файла заменит текущий прогресс.</p>
+      <div class="settings-buttons"><button type="button" class="secondary" id="export">Скачать сохранение</button><button type="button" class="secondary" id="import">Загрузить файл</button></div>
+      <input type="file" id="import-file" accept=".json,application/json" hidden>
+    </div>
+  </dialog>
+
+  <dialog class="modal" id="stats-dialog" aria-labelledby="stats-title">
+    <div class="modal-heading"><div><h2 id="stats-title">Статистика</h2></div><form method="dialog"><button class="icon-button" aria-label="Закрыть" data-icon="close"></button></form></div>
+    <dl class="modal-body summary" id="summary"></dl>
+  </dialog>
+
+  <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+</body>
+</html>
