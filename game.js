@@ -96,6 +96,41 @@ const upgradeItems = Rift.upgrades.map((upgrade, i) => {
   return { button, price: button.querySelector("b"), level: button.querySelector("small") };
 });
 
+const contractItems = Rift.contracts.map((contract, index) => {
+  const row = document.createElement("article");
+  row.className = "expedition-item";
+  row.innerHTML = `${icon(contract.icon, `class="expedition-glyph ${contract.color}"`)}<div class="expedition-copy"><strong>${contract.name}</strong><small>${contract.desc}</small><div class="track"><i></i></div><small class="expedition-counter"></small></div><button type="button" class="expedition-action" aria-label="Забрать награду за контракт"></button>`;
+  $("contract-list").append(row);
+  const button = row.querySelector("button");
+  button.addEventListener("click", () => {
+    advance();
+    const amount = Rift.claimContract(state, index);
+    if (!amount) return;
+    toast(`Контракт завершён: +${amount} печ.`, "star");
+    play("buy");
+    render();
+    save();
+  });
+  return { button, progress: row.querySelector(".track i"), counter: row.querySelector(".expedition-counter") };
+});
+
+const relicItems = Rift.relics.map((relic) => {
+  const row = document.createElement("article");
+  row.className = "expedition-item";
+  row.innerHTML = `${icon(relic.icon, `class="expedition-glyph ${relic.color}"`)}<div class="expedition-copy"><strong>${relic.name}</strong><small>${relic.desc}</small></div><button type="button" class="expedition-action"></button>`;
+  $("relic-list").append(row);
+  const button = row.querySelector("button");
+  button.addEventListener("click", () => {
+    advance();
+    if (!Rift.purchaseRelic(state, relic.id)) return;
+    toast(`Пробуждена реликвия: ${relic.name}`, "star");
+    play("buy");
+    render();
+    save();
+  });
+  return { button, row };
+});
+
 const skillElements = new Map();
 const treeCanvas = document.createElement("canvas");
 treeCanvas.className = "tree-lines";
@@ -306,10 +341,33 @@ function updateQuest() {
   }
 }
 
+function updateExpeditions() {
+  write($("sigils"), balance(state.sigils));
+  contractItems.forEach(({ button, progress, counter }, index) => {
+    const contract = Rift.contracts[index];
+    const goal = Rift.contractGoal(state, index);
+    const value = Rift.contractProgress(state, index);
+    const ready = value >= goal;
+    fill(progress, ratio(value, goal));
+    write(counter, `${balance(Math.min(value, goal))} / ${balance(goal)} ${contract.unit} · завершено ${state.contracts[index].claims}`);
+    write(button, ready ? `Забрать +${contract.reward}` : `+${contract.reward} печ.`);
+    button.disabled = !ready;
+    button.setAttribute("aria-label", `${contract.name}: ${ready ? "получить" : "награда"} ${contract.reward} печатей`);
+  });
+  relicItems.forEach(({ button, row }, index) => {
+    const relic = Rift.relics[index];
+    const owned = Rift.hasRelic(state, relic.id);
+    row.classList.toggle("acquired", owned);
+    write(button, owned ? "Получено" : `${relic.price} печ.`);
+    button.disabled = owned || state.sigils < relic.price;
+    button.setAttribute("aria-label", owned ? `${relic.name} уже получена` : `Купить ${relic.name} за ${relic.price} печатей`);
+  });
+}
+
 function updateSurge(now) {
   const remaining = Math.max(0, state.surgeUntil - now);
   const storm = Rift.has(state, "storm");
-  const duration = storm ? 20 : 12;
+  const duration = Rift.surgeDuration(state) / 1000;
   const goal = Rift.chargeGoal(state);
   const portion = remaining ? ratio(remaining, duration * 1000) : ratio(state.charge, goal);
   $("surge").disabled = Boolean(remaining) || state.charge < goal;
@@ -333,6 +391,7 @@ function render(now = Date.now()) {
   showWorlds();
   updateUpgrades();
   updateQuest();
+  updateExpeditions();
   updateSurge(now);
   const goal = Rift.rebirthGoal(state);
   const available = Rift.rebirthReward(state);
@@ -525,6 +584,8 @@ function showStats() {
     ["Миров открыто за всё время", `${state.worlds} / ${Rift.worlds.length}`], ["Резонансов", whole.format(state.surges)],
     ["Перерождений", whole.format(state.rebirths)], ["Всего эфира получено", balance(state.totalEssence)],
     ["Изучено навыков", `${state.skills.length} / ${Rift.skills.length}`], ["Поручений выполнено", `${state.quest} / ${Rift.quests.length}`],
+    ["Печатей Разлома", balance(state.sigils)], ["Пробуждённых реликвий", `${state.relics.length} / ${Rift.relics.length}`],
+    ["Экспедиций завершено", whole.format(state.contracts.reduce((sum, item) => sum + item.claims, 0))],
   ];
   $("summary").innerHTML = items.map(([label, value]) => `<dt>${label}</dt><dd>${value}</dd>`).join("");
   $("stats-dialog").showModal();
