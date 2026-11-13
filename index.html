@@ -7,9 +7,9 @@
   <meta name="description" content="Riftforge — фэнтези-кликер про осколки, восемь миров и силу перерождения.">
   <title>Riftforge — Осколки разлома</title>
   <link rel="icon" href="assets/favicon.png" type="image/png">
-  <link rel="stylesheet" href="style.css">
-  <script defer src="engine.js"></script>
-  <script defer src="game.js"></script>
+  <link rel="stylesheet" href="style.css?v=1.1.0">
+  <script defer src="engine.js?v=1.1.0"></script>
+  <script defer src="game.js?v=1.1.0"></script>
 </head>
 <body>
   <header class="topbar">
@@ -83,13 +83,24 @@
       </aside>
     </div>
 
+    <section class="expedition panel" aria-labelledby="expedition-title">
+      <div class="expedition-head">
+        <div><span class="section-kicker"><span data-icon="compass"></span> НОВОЕ · V1.1</span><h2 id="expedition-title">Экспедиции Разлома</h2><p>Выполняй контракты, собирай печати и пробуждай реликвии. Прогресс сохраняется после перерождения.</p></div>
+        <div class="sigil-total" aria-label="Печати Разлома"><span data-icon="star"></span><strong id="sigils">0</strong><small>Печати</small></div>
+      </div>
+      <div class="expedition-columns">
+        <div><h3>Контракты <small>Повторяемые задания</small></h3><div id="contract-list" class="contract-list"></div></div>
+        <div><h3>Реликвии <small>Постоянные улучшения</small></h3><div id="relic-list" class="relic-list"></div></div>
+      </div>
+    </section>
+
     <section class="ascension panel" aria-labelledby="rebirth-title">
       <div class="ascension-intro"><span class="ascension-icon" data-icon="cycle"></span><div><h2 id="rebirth-title">Перерождение</h2><p>Начни новый цикл и получи эфир для Древа навыков.</p></div></div>
       <div class="rebirth-progress"><div><span>До перерождения</span><strong id="rebirth-count">0 / 5 000</strong></div><div class="track"><i id="rebirth-progress"></i></div></div>
       <button type="button" class="ascend-button" id="rebirth" aria-disabled="true"><span data-icon="cycle"></span><span>Переродиться</span><span data-icon="lock" id="rebirth-lock"></span></button>
     </section>
 
-    <footer><span>RIFT<span class="footer-violet">FORGE</span> <span class="footer-version">v1.0.0</span></span><button type="button" id="stats-open"><span data-icon="chart"></span> Статистика</button></footer>
+    <footer><span>RIFT<span class="footer-violet">FORGE</span> <span class="footer-version">v1.1.0</span></span><button type="button" id="stats-open"><span data-icon="chart"></span> Статистика</button></footer>
   </main>
 
   <dialog class="modal tree-modal" id="tree-dialog" aria-labelledby="tree-title">

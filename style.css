@@ -336,3 +336,30 @@ footer button [data-icon] { font-size: 13px; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+
+/* Riftforge 1.1 — Expeditions */
+.expedition { margin-top: 16px; padding: 19px; }
+.expedition-head { display: flex; align-items: start; justify-content: space-between; gap: 14px; margin-bottom: 17px; }
+.expedition-head h2 { font: 650 24px/1.25 var(--title); margin: 5px 0; }
+.expedition-head p { color: #afa5c0; font-size: 12px; max-width: 65ch; }
+.sigil-total { display: flex; align-items: center; gap: 8px; background: #30223f; border: 1px solid #715399; border-radius: 10px; padding: 10px 14px; color: #e6c8ff; white-space: nowrap; }
+.sigil-total strong { font-size: 20px; font-variant-numeric: tabular-nums; }
+.sigil-total small { color: #b7a5c8; font-size: 11px; }
+.expedition-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.expedition-columns > div { min-width: 0; }
+.expedition-columns h3 { margin: 0 0 10px; font: 650 16px var(--title); }
+.expedition-columns h3 small { display: inline; margin-left: 6px; font: 11px "Segoe UI",sans-serif; color: #948ba8; }
+.contract-list,.relic-list { display: grid; align-content: start; gap: 8px; }
+.expedition-item { min-width: 0; display: flex; gap: 10px; align-items: center; padding: 10px; background: #1b1729; border: 1px solid #332a46; border-radius: 9px; }
+.expedition-item.acquired { border-color: #386658; background: #182b2a; }
+.expedition-glyph { display: grid; place-items: center; width: 34px; height: 34px; flex: 0 0 34px; border: 1px solid #4c3a67; border-radius: 8px; color: var(--icon,#caafff); background: #281e3b; font-size: 18px; }
+.expedition-copy { flex: 1; min-width: 0; display: grid; gap: 3px; }
+.expedition-copy strong { font-size: 12px; overflow-wrap: anywhere; }
+.expedition-copy small { color: #a9a0b8; font-size: 10px; overflow-wrap: anywhere; }
+.expedition-copy .track { margin-top: 5px; }
+.expedition-counter { font-variant-numeric: tabular-nums; }
+.expedition-action { flex: 0 0 auto; max-width: 110px; border: 1px solid #815caf; border-radius: 7px; padding: 7px 9px; background: #4b326e; color: #f4e9ff; font-size: 11px; font-weight: 650; white-space: normal; }
+.expedition-action:hover:not(:disabled) { background: #64428c; }
+.expedition-action:disabled { opacity: .55; background: #29243b; cursor: default; }
+@media (max-width: 880px) { .expedition-columns { gap: 12px; } .expedition-item { flex-wrap: wrap; } .expedition-action { margin-left: auto; } }
+@media (max-width: 620px) { .expedition { padding: 13px; } .expedition-head { flex-wrap: wrap; } .expedition-columns { grid-template-columns: minmax(0,1fr); } .expedition-columns h3 small { display: block; margin-left: 0; } }

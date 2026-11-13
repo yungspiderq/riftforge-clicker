@@ -49,6 +49,22 @@ const Rift = (() => {
     { name: "Хранитель вечности", metric: "rebirths", unit: "циклов", goal: 10, reward: 10000000 },
   ];
 
+  // Expedition contracts use lifetime counters, so progress survives rebirth.
+  const contracts = [
+    { name: "Эхо ударов", icon: "sword", color: "rose", metric: "hits", unit: "ударов", goal: 75, scale: 1.35, reward: 1, desc: "Разбей кристалл точными ударами." },
+    { name: "Хранитель Резонанса", icon: "bolt", color: "blue", metric: "surges", unit: "резонансов", goal: 3, scale: 1.28, reward: 2, desc: "Активируй заряженный Резонанс." },
+    { name: "Охотник за осколками", icon: "gem", color: "teal", metric: "earned", unit: "осколков", goal: 1200, scale: 3, reward: 1, desc: "Собирай осколки в любых мирах." },
+  ];
+
+  // Relics are permanent bonuses purchased with seals from contracts.
+  const relics = [
+    { id: "blade", name: "Осколочный клинок", icon: "sword", color: "rose", price: 2, desc: "+25% к добыче за удар." },
+    { id: "engine", name: "Сердце автомата", icon: "golem", color: "teal", price: 4, desc: "+40% к пассивной добыче." },
+    { id: "prism", name: "Призма пустоты", icon: "star", color: "blue", price: 7, desc: "+30% ко всей добыче." },
+    { id: "chronometer", name: "Часы Резонанса", icon: "bolt", color: "amber", price: 10, desc: "Резонанс длится на 6 секунд дольше." },
+    { id: "crown", name: "Корона Разлома", icon: "eclipse", color: "violet", price: 16, desc: "+60% ко всей добыче." },
+  ];
+
   const SAVE_KEY = "riftforge.save.v1";
   const MAX = 1e100;
   const MAX_LEVEL = 160;
@@ -58,12 +74,14 @@ const Rift = (() => {
     essence: 0, totalEssence: 0, rebirths: 0, world: 0, worlds: 1,
     upgrades: upgrades.map(() => 0), skills: [], hits: 0, surges: 0,
     bestCombo: 1, quest: 0, charge: 0, surgeUntil: 0, sound: false, fx: true,
+    sigils: 0, relics: [], contracts: contracts.map(() => ({ base: 0, claims: 0 })),
   });
   const number = (value, max = MAX) => typeof value === "number" && Number.isFinite(value) ? Math.min(max, Math.max(0, value)) : 0;
   const integer = (value, max) => Math.floor(number(value, max));
   const worldUnlocked = (state, index) => worlds[index].need <= state.runEarned;
   const unlockedCount = (state) => worlds.filter((world) => world.need <= state.runEarned).length;
   const has = (state, id) => state.skills.includes(id);
+  const hasRelic = (state, id) => state.relics.includes(id);
   const levelSum = (state) => state.upgrades.reduce((sum, level) => sum + level, 0);
 
   function restore(data, now = Date.now()) {
@@ -86,6 +104,17 @@ const Rift = (() => {
     state.bestCombo = Math.max(state.bestCombo, 1);
     state.sound = data.sound === true;
     state.fx = data.fx !== false;
+    state.sigils = integer(data.sigils, Number.MAX_SAFE_INTEGER);
+    state.relics = Array.isArray(data.relics) ? relics.filter((relic) => data.relics.includes(relic.id)).map((relic) => relic.id) : [];
+    state.contracts = contracts.map((contract, index) => {
+      const record = Array.isArray(data.contracts) ? data.contracts[index] : null;
+      const current = state[contract.metric];
+      // Old v1.0 saves start new contracts from their current lifetime totals.
+      return {
+        base: record && typeof record === "object" ? Math.min(number(record.base), current) : current,
+        claims: record && typeof record === "object" ? integer(record.claims, 100000) : 0,
+      };
+    });
     return state;
   }
 
@@ -107,12 +136,16 @@ const Rift = (() => {
     if (has(state, "root")) boost *= 1.2;
     if (has(state, "eclipse")) boost *= 2;
     if (has(state, "anchor")) boost *= 1.3;
+    if (hasRelic(state, "prism")) boost *= 1.3;
+    if (hasRelic(state, "crown")) boost *= 1.6;
     if (state.surgeUntil > now) boost *= has(state, "storm") ? 4 : 3;
     if (has(state, "force")) click *= 1.5;
     if (has(state, "rupture")) click *= 2;
     if (has(state, "echo")) idle *= 1.5;
     if (has(state, "automata")) idle *= 2;
     if (has(state, "core")) idle *= 2;
+    if (hasRelic(state, "blade")) click *= 1.25;
+    if (hasRelic(state, "engine")) idle *= 1.4;
     return { click: click * boost, idle: idle * boost };
   }
 
@@ -132,12 +165,13 @@ const Rift = (() => {
   }
 
   const chargeGoal = (state) => has(state, "flux") ? 28 : 45;
+  const surgeDuration = (state) => (has(state, "storm") ? 20000 : 12000) + (hasRelic(state, "chronometer") ? 6000 : 0);
 
   function activate(state, now = Date.now()) {
     if (state.charge < chargeGoal(state) || state.surgeUntil > now) return false;
     state.charge = 0;
     state.surges += 1;
-    state.surgeUntil = now + (has(state, "storm") ? 20000 : 12000);
+    state.surgeUntil = now + surgeDuration(state);
     return true;
   }
 
@@ -208,6 +242,38 @@ const Rift = (() => {
     return true;
   }
 
+  function contractGoal(state, index) {
+    const contract = contracts[index];
+    if (!contract || !state.contracts[index]) return 0;
+    return Math.min(MAX, Math.ceil(contract.goal * contract.scale ** Math.min(150, state.contracts[index].claims)));
+  }
+
+  function contractProgress(state, index) {
+    const contract = contracts[index];
+    if (!contract || !state.contracts[index]) return 0;
+    return Math.max(0, state[contract.metric] - state.contracts[index].base);
+  }
+
+  function claimContract(state, index) {
+    const contract = contracts[index];
+    if (!contract || !state.contracts[index]) return 0;
+    const goal = contractGoal(state, index);
+    if (contractProgress(state, index) < goal || state.sigils > Number.MAX_SAFE_INTEGER - contract.reward) return 0;
+    state.sigils += contract.reward;
+    // Preserve extra progress, but increase the target for the next contract.
+    state.contracts[index].base += goal;
+    state.contracts[index].claims += 1;
+    return contract.reward;
+  }
+
+  function purchaseRelic(state, id) {
+    const relic = relics.find((item) => item.id === id);
+    if (!relic || hasRelic(state, id) || state.sigils < relic.price) return false;
+    state.sigils -= relic.price;
+    state.relics.push(id);
+    return true;
+  }
+
   function questProgress(state, quest) {
     return quest.metric === "levels" ? levelSum(state) : state[quest.metric];
   }
@@ -221,9 +287,10 @@ const Rift = (() => {
   }
 
   return {
-    worlds, upgrades, skills, quests, SAVE_KEY, SERIES_TIME, fresh, restore, add, worldUnlocked,
-    unlockedCount, rates, comboMultiplier, hit, chargeGoal, activate, accrue, quote, purchase,
-    rebirthGoal, rebirthReward, rebirth, buySkill, questProgress, claim, has,
+    worlds, upgrades, skills, quests, contracts, relics, SAVE_KEY, SERIES_TIME, fresh, restore, add, worldUnlocked,
+    unlockedCount, rates, comboMultiplier, hit, chargeGoal, surgeDuration, activate, accrue, quote, purchase,
+    rebirthGoal, rebirthReward, rebirth, buySkill, questProgress, claim, has, hasRelic,
+    contractGoal, contractProgress, claimContract, purchaseRelic,
   };
 })();
 
